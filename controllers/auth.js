@@ -2,13 +2,15 @@ import User from "../models/users.js";
 import nodemailer from "nodemailer";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import { validationResult } from "express-validator";
 import createError from "http-errors";
 import {
   validateInput,
   validatePassword,
   validateEmailFormat,
 } from "../helpers/validation.js";
+
+
+
 
 const transporter = nodemailer.createTransport({
   host: process.env.EMAIL_HOST,
@@ -22,20 +24,6 @@ const transporter = nodemailer.createTransport({
     rejectUnauthorized: false,
   },
 });
-
-const sendEmail = async (email, subject, html) => {
-  try {
-    await transporter.sendMail({
-      from: `${process.env.EMAIL}`,
-      to: email,
-      subject,
-      text: "welcome",
-      html,
-    });
-  } catch (error) {
-    next(error);
-  }
-};
 
 const getTemplate = (name, token) => {
   return `
@@ -55,15 +43,21 @@ const getTemplate = (name, token) => {
 
 		`;
 };
-const confirmCode = async (req, res) => {
+const confirmCode = async (username, userId, email) => {
   const subject = "welcome";
-  const username = req.body.username;
-  const user = await User.findOne({ username: username });
-  const user_Id = user.id;
-  const template = getTemplate(username, user_Id);
-  const email = req.body.email;
-  const response = await sendEmail(email, subject, template);
-  return response;
+  const template = getTemplate(username, userId);
+  await sendEmail(email, subject, template);
+  return { success: true };
+};
+
+const sendEmail = async (email, subject, html) => {
+    await transporter.sendMail({
+      from: `${process.env.EMAIL}`,
+      to: email,
+      subject,
+      text: "welcome",
+      html,
+    });
 };
 
 export const signup = async (req, res, next) => {
@@ -90,7 +84,7 @@ export const signup = async (req, res, next) => {
     await newUser.save(req);
 
     // Send confirmation code
-    const emailResponse = await confirmCode(req, res);
+    const emailResponse = await confirmCode(req, res, next);
 
     res.status(200).json({
       message: "Check your email to confirm your account",
@@ -114,7 +108,7 @@ export const signin = async (req, res, next) => {
     }
     const token = jwt.sign({ id: user._id }, process.env.JWT);
     console.log(res.cookie);
-    res.cookie("acces_token", token, {
+    res.cookie("access_token", token, {
       httpOnly: true,
       expires: new Date(Date.now() + 24 * 60 * 60 * 1000),
       secure: true,
