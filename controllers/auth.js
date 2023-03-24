@@ -8,9 +8,7 @@ import {
   validatePassword,
   validateEmailFormat,
 } from "../helpers/validation.js";
-
-
-
+import speakeasy from "speakeasy";
 
 const transporter = nodemailer.createTransport({
   host: process.env.EMAIL_HOST,
@@ -36,7 +34,7 @@ const getTemplate = (name, token) => {
             <h2>Welcome ${name}</h2>
             <p>To confirm your account, please click de link below</p>
             <a
-                href=${process.env.ROUTER}/${token}
+                href=${process.env.EMAIL_ROUTER}/${token}
                 target="_blank"
             >Account Confirm</a>
         </div>
@@ -51,13 +49,46 @@ const confirmCode = async (username, userId, email) => {
 };
 
 const sendEmail = async (email, subject, html) => {
-    await transporter.sendMail({
-      from: `${process.env.EMAIL}`,
-      to: email,
-      subject,
-      text: "welcome",
-      html,
+  await transporter.sendMail({
+    from: `${process.env.EMAIL}`,
+    to: email,
+    subject,
+    text: "welcome",
+    html,
+  });
+};
+
+
+const sendTwoFactorTokenByEmail = async (email, token) => {
+  const subject = "Your session code";
+  const template = `
+    <head>
+      <link rel="stylesheet" href="./style.css">
+    </head>
+    
+    <div id="email___content">
+      <img src=${process.env.IMAGE} alt="">
+      <h2>Your session code is: ${token}</h2>
+      <p>This code will expire in 10 minutes. Please use it to complete your login.</p>
+    </div>
+  `;
+  
+  await sendEmail(email, subject, template);
+};
+
+
+const twoFactor = async () => {
+  try {
+    const secret = speakeasy.generateSecret({ length: 20 }); // Genera un secreto aleatorio
+    const token = speakeasy.totp({
+      secret: secret.base32,
+      encoding: "base32",
+      time: 600, // El token será válido por 10 minutos
     });
+    return token;
+  } catch (error) {
+    throw error;
+  }
 };
 
 export const signup = async (req, res, next) => {
@@ -84,7 +115,7 @@ export const signup = async (req, res, next) => {
     await newUser.save(req);
 
     // Send confirmation code
-    const emailResponse = await confirmCode(req, res, next);
+    const emailResponse = await confirmCode(req, res);
 
     res.status(200).json({
       message: "Check your email to confirm your account",
@@ -99,12 +130,17 @@ export const signup = async (req, res, next) => {
 export const signin = async (req, res, next) => {
   try {
     const user = await User.findOne({ username: req.body.username });
+
     if (!user) {
-      return res.status(401).json({ message: "wrong credentials!" });
+      throw createError(401, "wrong credentials!");
     }
+    if (!user.verified) {
+      throw createError(401, "User not verified, please check your email");
+    }
+
     const isCorrect = await bcrypt.compare(req.body.password, user.password);
     if (!isCorrect) {
-      return res.status(400).json({ message: "wrong credentials" });
+      throw createError(400, "wrong credentials");
     }
     const token = jwt.sign({ id: user._id }, process.env.JWT);
     console.log(res.cookie);
@@ -115,7 +151,9 @@ export const signin = async (req, res, next) => {
       sameSite: "none",
     });
     console.log(res.cookie);
-    res.json({ others, token });
+    const twoFactorToken =await twoFactor();
+    await sendTwoFactorTokenByEmail(user.email, twoFactorToken);
+    res.json({token });
   } catch (error) {
     next(error);
   }
