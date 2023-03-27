@@ -18,6 +18,9 @@ const UserSchema = new mongoose.Schema({
   profilePictureId: {
     type: String,
   },
+	authToken: {
+			type:Number,
+	},
   verified: {
     type: Boolean,
     default: false,

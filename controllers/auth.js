@@ -9,6 +9,10 @@ import {
   validateEmailFormat,
 } from "../helpers/validation.js";
 import speakeasy from "speakeasy";
+import dotenv from "dotenv";
+dotenv.config();
+
+// NODEMAILER CONFIG
 
 const transporter = nodemailer.createTransport({
   host: process.env.EMAIL_HOST,
@@ -41,9 +45,10 @@ const getTemplate = (name, token) => {
 
 		`;
 };
+
 const confirmCode = async (username, userId, email) => {
-  const subject = "welcome";
   const template = getTemplate(username, userId);
+  const subject = "Activate your account";
   await sendEmail(email, subject, template);
   return { success: true };
 };
@@ -58,7 +63,6 @@ const sendEmail = async (email, subject, html) => {
   });
 };
 
-
 const sendTwoFactorTokenByEmail = async (email, token) => {
   const subject = "Your session code";
   const template = `
@@ -72,11 +76,10 @@ const sendTwoFactorTokenByEmail = async (email, token) => {
       <p>This code will expire in 10 minutes. Please use it to complete your login.</p>
     </div>
   `;
-  
+
   await sendEmail(email, subject, template);
 };
-
-
+// TWO FACTOR TOKEN CONFIG
 const twoFactor = async () => {
   try {
     const secret = speakeasy.generateSecret({ length: 20 }); // Genera un secreto aleatorio
@@ -91,6 +94,7 @@ const twoFactor = async () => {
   }
 };
 
+// SIGNUP SIGNIN CONFIG
 export const signup = async (req, res, next) => {
   console.log("signup");
   try {
@@ -114,8 +118,17 @@ export const signup = async (req, res, next) => {
     const newUser = new User({ ...req.body, password: hash });
     await newUser.save(req);
 
+    const emailToken = req.body.email;
+    User.emailToken = emailToken;
+    console.log(emailToken);
+
     // Send confirmation code
-    const emailResponse = await confirmCode(req, res);
+    const email = req.body.email;
+    const emailResponse = await confirmCode(
+      req.body.username,
+      req.body._id,
+      email
+    );
 
     res.status(200).json({
       message: "Check your email to confirm your account",
@@ -128,8 +141,10 @@ export const signup = async (req, res, next) => {
 };
 
 export const signin = async (req, res, next) => {
+  console.log("trying to login");
   try {
     const user = await User.findOne({ username: req.body.username });
+    console.log(user);
 
     if (!user) {
       throw createError(401, "wrong credentials!");
@@ -139,11 +154,12 @@ export const signin = async (req, res, next) => {
     }
 
     const isCorrect = await bcrypt.compare(req.body.password, user.password);
+    console.log(isCorrect);
     if (!isCorrect) {
       throw createError(400, "wrong credentials");
     }
     const token = jwt.sign({ id: user._id }, process.env.JWT);
-    console.log(res.cookie);
+    console.log(token);
     res.cookie("access_token", token, {
       httpOnly: true,
       expires: new Date(Date.now() + 24 * 60 * 60 * 1000),
@@ -151,9 +167,26 @@ export const signin = async (req, res, next) => {
       sameSite: "none",
     });
     console.log(res.cookie);
-    const twoFactorToken =await twoFactor();
+
+    const twoFactorToken = await twoFactor();
+    console.log("sendint twoFactor");
     await sendTwoFactorTokenByEmail(user.email, twoFactorToken);
-    res.json({token });
+    console.log("sent twofa");
+    res.json({ token });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const verificationToken = async (req, res, next) => {
+  const token = await req.user.authToken;
+  try {
+    const userInputToken = req.body.token;
+    if (userInputToken === token) {
+      res.json({ message: "token was verified successfully" });
+    } else {
+      throw createError(400, "wrong credentials");
+    }
   } catch (error) {
     next(error);
   }
