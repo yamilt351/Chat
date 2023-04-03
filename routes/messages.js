@@ -7,7 +7,7 @@ import {
   searchMessage,
   sendMessage,
   viewMessage,
-} from "../controllers/messages";
+} from "../controllers/messages.js";
 const router = Router();
 
 router.post("/message/:id", sendMessage);

@@ -6,6 +6,7 @@ import {setUpSocket} from './helpers/socket.js';
 import chatRoom from './routes/chatRoom.js'
 import messages from './routes/messages.js'
 import notifications from './routes/notifications.js'
+import reactions from './routes/reactions.js'
 import importMiddlewares from "./middlewaresHandler.js";
 import http from "http";
 
@@ -25,7 +26,7 @@ middlewares.forEach((middleware) => {
 app.use('/api/chatRoom/',chatRoom)
 app.use('/api/notifications/',notifications)
 app.use('/api/message/',messages)
-app.use('/api/reactions/')
+app.use('/api/reactions/',reactions)
 // ERROR
 app.use(notFoundMiddleware);
 app.use(errorMiddleware);

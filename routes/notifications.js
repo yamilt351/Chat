@@ -5,7 +5,7 @@ import {
   getNotificationsById,
   sendNotifications,
   viewNotifications,
-} from "../controllers/notifications";
+} from "../controllers/notifications.js";
 
 const router = Router();
 
@@ -14,3 +14,5 @@ router.delete("/notifications/:id", deleteNotifications);
 router.put("/notifications/id", viewNotifications);
 router.get("/notifications/:id", getNotificationsById);
 router.get("/notifications/all", allNotifications);
+
+export default router;
