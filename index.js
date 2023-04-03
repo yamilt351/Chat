@@ -2,7 +2,8 @@ import express from "express";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 import {errorMiddleware, notFoundMiddleware} from "./helpers/errors.js";
-import { setUpSocket } from './helpers/socket.js';
+import {setUpSocket} from './helpers/socket.js';
+import chatRoom from './routes/chatRoom.js'
 import importMiddlewares from "./middlewaresHandler.js";
 import http from "http";
 
@@ -11,21 +12,24 @@ dotenv.config();
 const app = express();
 const middlewares = await importMiddlewares();
 const server = http.createServer(app);
+
 //MIDLEWARES
-
-
-
-const io=setUpSocket()
-
 middlewares.forEach((middleware) => {
   console.log(`Loading middleware /${middlewares.length}: ${middleware.name}`);
   app.use(middleware);
 });
 
 // ROUTES
+app.use('/api/chatRoom/',chatRoom)
+app.use('/api/notifications/')
+app.use('/api/message/')
+app.use('/api/reactions/')
 // ERROR
 app.use(notFoundMiddleware);
 app.use(errorMiddleware);
+
+//SOCKET IO
+setUpSocket()
 
 // server
 server.listen(process.env.PORT, async () => {
