@@ -1,7 +1,12 @@
+import mongoose from "mongoose";
 const NotificationSchema = new mongoose.Schema({
   recipient: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
+  },
+  chatRoomId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "chatGroup",
     required: true,
   },
   message: {

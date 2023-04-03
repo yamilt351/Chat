@@ -1,3 +1,4 @@
+
 import mongoose from "mongoose";
 
 const UserSchema = new mongoose.Schema(
@@ -32,7 +33,7 @@ const UserSchema = new mongoose.Schema(
     },
     notification: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Notification",
+      ref: "SocialNotification",
     },
     readLater: {
       type: [String],

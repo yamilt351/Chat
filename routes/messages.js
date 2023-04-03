@@ -10,11 +10,11 @@ import {
 } from "../controllers/messages.js";
 const router = Router();
 
-router.post("/message/:id", sendMessage);
-router.put("/message/:id", editMessage);
-router.put("/message/:id/viewed", viewMessage);
-router.delete("/message/:id", deleteMessage);
-router.get("/message/:id", messageById);
+router.post("/message/:chatRoomId", sendMessage);
+router.put("/message/:messageId", editMessage);
+router.put("/message/:messageId/viewed", viewMessage);
+router.delete("/message/:messageId", deleteMessage);
+router.get("/message/:messageId", messageById);
 router.get("/message/search", searchMessage);
 router.get("/message/all", allMessages);
 

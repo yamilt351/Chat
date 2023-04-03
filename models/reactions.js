@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 const ReactionSchema = new mongoose.Schema({
   user: {
     type: mongoose.Schema.Types.ObjectId,

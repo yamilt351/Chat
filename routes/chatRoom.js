@@ -9,10 +9,10 @@ import {
 } from "../controllers/chatRoom.js";
 const router = Router();
 
-router.post("/chatRoom", createRoom);
-router.put("/chatRoom/:id", editRoom);
-router.delete("/chatRoom/:id", deleteRoom);
-router.get("/chatRoom/:id", getIdRoom);
+router.post("/chatRoom/", createRoom);
+router.put("/chatRoom/:chatRoomId", editRoom);
+router.delete("/chatRoom/:chatRoomId", deleteRoom);
+router.get("/chatRoom/:chatRoomId", getIdRoom);
 router.get("/search", searchRoom);
 router.get("/all/chatRoom", getAllRooms);
 
