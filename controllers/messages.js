@@ -19,6 +19,14 @@ export const viewMessage = async (req, res, next) => {
     next(error);
   }
 };
+
+export const deleteMessage = async (req, res, next) => {
+		try {
+			console.log('deleting message');
+		} catch (error) {
+			next(error)
+		}
+}
 export const messageById = async (req, res, next) => {
   try {
     console.log("get messageById");
